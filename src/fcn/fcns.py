@@ -3,29 +3,29 @@ from torch.nn import *
 class VGG16(Module):
     def __init__(self):
         super(VGG16, self).__init__()
-        self.conv1 = Sequential(Conv2d(3, 64, 3, padding=100), ReLU(),
-                                Conv2d(64, 64, 3, padding=1), ReLU(),
+        self.conv1 = Sequential(Conv2d(3, 64, 3, padding=100), ReLU(inplace=True),
+                                Conv2d(64, 64, 3, padding=1), ReLU(inplace=True),
                                 MaxPool2d(2, ceil_mode=True))
-        self.conv2 = Sequential(Conv2d(64, 128, 3, padding=1), ReLU(),
-                                Conv2d(128, 128, 3, padding=1), ReLU(),
-                                MaxPool2d(2, ceil_mode=True))
-
-        self.conv3 = Sequential(Conv2d(128, 256, 3, padding=1), ReLU(),
-                                Conv2d(256, 256, 3, padding=1), ReLU(),
-                                Conv2d(256, 256, 3, padding=1), ReLU(),
+        self.conv2 = Sequential(Conv2d(64, 128, 3, padding=1), ReLU(inplace=True),
+                                Conv2d(128, 128, 3, padding=1), ReLU(inplace=True),
                                 MaxPool2d(2, ceil_mode=True))
 
-        self.conv4 = Sequential(Conv2d(256, 512, 3, padding=1), ReLU(),
-                                Conv2d(512, 512, 3, padding=1), ReLU(),
-                                Conv2d(512, 512, 3, padding=1), ReLU(),
+        self.conv3 = Sequential(Conv2d(128, 256, 3, padding=1), ReLU(inplace=True),
+                                Conv2d(256, 256, 3, padding=1), ReLU(inplace=True),
+                                Conv2d(256, 256, 3, padding=1), ReLU(inplace=True),
                                 MaxPool2d(2, ceil_mode=True))
 
-        self.conv5 = Sequential(Conv2d(512, 512, 3, padding=1), ReLU(),
-                                Conv2d(512, 512, 3, padding=1), ReLU(),
-                                Conv2d(512, 512, 3, padding=1), ReLU(),
+        self.conv4 = Sequential(Conv2d(256, 512, 3, padding=1), ReLU(inplace=True),
+                                Conv2d(512, 512, 3, padding=1), ReLU(inplace=True),
+                                Conv2d(512, 512, 3, padding=1), ReLU(inplace=True),
                                 MaxPool2d(2, ceil_mode=True))
-        self.fcn6 = Sequential(Conv2d(512, 4096, 7), Dropout(), ReLU())
-        self.fcn7 = Sequential(Conv2d(4096, 4096, 1), Dropout(), ReLU())
+
+        self.conv5 = Sequential(Conv2d(512, 512, 3, padding=1), ReLU(inplace=True),
+                                Conv2d(512, 512, 3, padding=1), ReLU(inplace=True),
+                                Conv2d(512, 512, 3, padding=1), ReLU(inplace=True),
+                                MaxPool2d(2, ceil_mode=True))
+        self.fcn6 = Sequential(Conv2d(512, 4096, 7), Dropout(), ReLU(inplace=True))
+        self.fcn7 = Sequential(Conv2d(4096, 4096, 1), Dropout(), ReLU(inplace=True))
         self.score_fn = Conv2d(4096, 21, 1)
 
     def forward(self, X):
