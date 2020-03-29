@@ -73,6 +73,9 @@ class VOC(Dataset):
 
         return image, label
 
+    def get_ori_image(self, idx):
+        return np.array(Image.open(self.image_file_list[idx]).convert("RGB")).astype("uint8")
+
     def image_transform(self, img):
         return self.image_transformer(img)
 
@@ -85,6 +88,7 @@ class VOC(Dataset):
         return label_mask
 
     def label_to_colormap(self, label_mask):
+        label_mask = np.squeeze(label_mask)
         label_colours = self.get_pascal_labels()
         r = label_mask.copy()
         g = label_mask.copy()
@@ -94,9 +98,9 @@ class VOC(Dataset):
             g[label_mask == ll] = label_colours[ll, 1]
             b[label_mask == ll] = label_colours[ll, 2]
         rgb = np.zeros((label_mask.shape[0], label_mask.shape[1], 3))
-        rgb[:, :, 0] = r / 255.0
-        rgb[:, :, 1] = g / 255.0
-        rgb[:, :, 2] = b / 255.0
+        rgb[:, :, 0] = r
+        rgb[:, :, 1] = g
+        rgb[:, :, 2] = b
 
         return rgb
 

@@ -63,20 +63,17 @@ class Trainer:
             loss.backward()
             self.optimizer.step()
 
-            logging.info("epoch: {}, batch: {}, loss: {}".format(epoch, batchIdx, loss.item()))
-
-            self.summary_writer.add_scalar("Train/Loss", loss.item(), epoch * len(self.train_loader) + batchIdx)
-            self.summary_writer.flush()
-
-    def predict(self, image, network):
-        preds = network(torch.unsqueeze(image, 0)).squeeze()
-        preds = preds.cpu().detach().numpy().transpose(1, 2, 0)
-        preds = np.argmax(preds, 2)
+            if batchIdx % 100 == 0:
+                logging.info("epoch: {}, batch: {}, loss: {}".format(epoch, batchIdx, loss.item()))
+                self.summary_writer.add_scalar("Train/Loss", loss.item(), epoch * len(self.train_loader) + batchIdx)
+                self.summary_writer.flush()
 
     def evaluate_epoch(self, epoch):
 
         self.network.eval()
         metrics = Metrics(self.train_set.n_classes)
+
+        sample_idx = random.randint(0, len(self.val_loader) - 1)
 
         with torch.no_grad():
             for i_val, (images_val, labels_val) in enumerate(self.val_loader):
@@ -92,11 +89,26 @@ class Trainer:
 
                 metrics.update(gt, pred)
 
+                if i_val == sample_idx:
+                    pred_mask = self.val_set.label_to_colormap(pred)
+                    gt_mask = self.val_set.label_to_colormap(gt)
+
+                    image = self.val_set.get_ori_image(i_val)
+                    self.summary_writer.add_image("image", image, dataformats="HWC")
+                    self.summary_writer.add_image("pred_mask", np.uint8(pred_mask), dataformats="HWC")
+                    self.summary_writer.add_image("gt_mask", np.uint8(gt_mask), dataformats="HWC")
+                    self.summary_writer.flush()
+
         scores, cls_iu = metrics.get_scores()
+
+        logging.info("epoch: {}, Overall_Acc: {}, Mean_Acc: {}, Mean_Iou: {}".format(epoch, scores["Overall_Acc"],
+                                                                                     scores["Mean_Acc"],
+                                                                                     scores["Mean_IoU"]))
 
         self.summary_writer.add_scalar("Val/Overall_Acc", scores["Overall_Acc"], epoch)
         self.summary_writer.add_scalar("Val/Mean_Acc", scores["Mean_Acc"], epoch)
         self.summary_writer.add_scalar("Val/Mean_IoU", scores["Mean_IoU"], epoch)
+        self.summary_writer.flush()
 
     def run(self):
         for epoch in range(self.num_epoch):
@@ -105,7 +117,7 @@ class Trainer:
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument('--d_train_dir', default=None)
+    arg_parser.add_argument('--d_train_dir', default="E:\\dataset")
     arg_parser.add_argument('--d_val_dir', default=None)
     arg_parser.add_argument('--d_common_data_dir', default=None)
     arg_parser.add_argument('--d_pre_model_dir', default=None)
