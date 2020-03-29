@@ -118,7 +118,8 @@ if __name__ == '__main__':
 
     # 网络和优化器
     network = FCN8s(n_class=train_set.n_classes)
-    vgg16 = torchvision.models.vgg16(pretrained=True)
+    vgg16 = torchvision.models.vgg16(pretrained=False)
+    vgg16.load_state_dict(torch.load(os.path.join(args.d_train_dir, ))
     network.copy_params_from_vgg16(vgg16)
     if args.use_cuda:
         network = network.cuda()
