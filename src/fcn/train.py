@@ -2,6 +2,15 @@
 """
 模型训练和评估代码
 """
+import os
+os.system("rm __init__.py")
+os.system("rm __init__.pyc")
+print(os.listdir("."))
+
+import sys
+sys.path.append(".")
+
+
 from src.fcn.fcns import FCN8s
 from src.fcn.dataset.voc import VOC
 from src.fcn.evaluator import Evaluator
@@ -111,6 +120,13 @@ if __name__ == '__main__':
     args, _ = arg_parser.parse_known_args()
 
     summary_writer = SummaryWriter(args.d_summary_dir)
+
+    # 解压hdfs数据
+    os.system("unzip {0}/VOCdevkit.zip -d {0} > /dev/null 2>&1".format(args.d_train_dir))
+
+    print(os.listdir("/train_dir/"))
+    print(os.listdir("/train_dir/VOCdevkit"))
+    print(os.listdir("/train_dir/VOCdevkit/VOC2012"))
 
     # 数据集
     train_set = VOC(args.data_dir, True)
