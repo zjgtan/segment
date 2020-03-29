@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 
 from src.fcn.fcns import FCN8s
 from src.fcn.dataset.voc import VOC
-from src.fcn.evaluator import Evaluator
+from src.fcn.metrics import Metrics
 
 import numpy as np
 import torch
@@ -73,35 +73,35 @@ class Trainer:
         preds = preds.cpu().detach().numpy().transpose(1, 2, 0)
         preds = np.argmax(preds, 2)
 
+    def evaluate_epoch(self, epoch):
+
+        self.network.eval()
+        metrics = Metrics(self.train_set.n_classes)
+
+        with torch.no_grad():
+            for i_val, (images_val, labels_val) in enumerate(self.val_loader):
+                if self.use_cuda:
+                    images_val = images_val.cuda()
+                    labels_val = labels_val.cuda()
+
+                outputs = self.network(images_val)
+                val_loss = self.loss(input=outputs, target=labels_val)
+
+                pred = outputs.data.max(1)[1].cpu().numpy()
+                gt = labels_val.data.cpu().numpy()
+
+                metrics.update(gt, pred)
+
+        scores, cls_iu = metrics.get_scores()
+
+        self.summary_writer.add_scalar("Val/Overall_Acc", scores["Overall_Acc"], epoch)
+        self.summary_writer.add_scalar("Val/Mean_Acc", scores["Mean_Acc"], epoch)
+        self.summary_writer.add_scalar("Val/Mean_IoU", scores["Mean_IoU"], epoch)
 
     def run(self):
         for epoch in range(self.num_epoch):
             self.train_epoch(epoch)
-
-            '''
-            # 评估
-            meanIou, pixelAcc = self.evaluator.evaluate(self.network)
-            self.summaryWriter.add_scalar("Test/PixelAcc", pixelAcc, epoch)
-            self.summaryWriter.add_scalar("Test/MeanIOU", meanIou, epoch)
-            self.summaryWriter.flush()
-            '''
-
-            '''
-            # 预测结果
-            idx = random.randint(0, len(self.trainSet) - 1)
-            transImage, label = self.trainSet[idx]
-            transImage = transImage.cuda()
-            predImage = self.predict(transImage, self.network)
-
-            image = np.asarray(Image.open(self.trainSet.imageFileList[idx]).convert("RGB"), dtype="uint8")
-            labelImage = np.asarray(Image.open(self.trainSet.labelFileList[idx]).convert("RGB"), dtype="uint8")
-
-            self.summaryWriter.add_image("input", image, epoch, dataformats="HWC")
-            self.summaryWriter.add_image("pred", predImage, epoch, dataformats="HWC")
-            self.summaryWriter.add_image("label", labelImage, epoch, dataformats="HWC")
-            self.summaryWriter.flush()
-            '''
-
+            self.evaluate_epoch(epoch)
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
