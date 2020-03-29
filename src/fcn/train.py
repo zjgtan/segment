@@ -10,6 +10,8 @@ print(os.listdir("."))
 import sys
 sys.path.append(".")
 
+import logging
+logging.basicConfig(level=logging.INFO)
 
 from src.fcn.fcns import FCN8s
 from src.fcn.dataset.voc import VOC
@@ -25,6 +27,8 @@ import argparse
 import tqdm
 from PIL import Image
 import random
+
+
 
 class Trainer:
     def __init__(self, train_set, val_set, batch_size, network, optimizer, loss, num_epoch, summary_writer, use_cuda):
@@ -46,9 +50,7 @@ class Trainer:
     def train_epoch(self, epoch):
         self.network.train()
 
-        for batchIdx, (data, target) in tqdm.tqdm(enumerate(self.train_loader),
-                                                  total=len(self.train_loader),
-                                                  desc='Train epoch=%d' % epoch, ncols=80, leave=False):
+        for batchIdx, (data, target) in enumerate(self.train_loader):
             if self.use_cuda:
                 data = data.cuda()
                 target = target.cuda()
@@ -60,6 +62,8 @@ class Trainer:
             loss = self.loss(pred, target)
             loss.backward()
             self.optimizer.step()
+
+            logging.info("epoch: {}, batch: {}, loss: {}".format(epoch, batchIdx, loss.item()))
 
             self.summary_writer.add_scalar("Train/Loss", loss.item(), epoch * len(self.train_loader) + batchIdx)
             self.summary_writer.flush()
@@ -127,6 +131,7 @@ if __name__ == '__main__':
     print(os.listdir("/train_dir/"))
     print(os.listdir("/train_dir/VOCdevkit"))
     print(os.listdir("/train_dir/VOCdevkit/VOC2012"))
+    print(os.listdir("/train_dir/VOCdevkit/VOC2012/JPEGImages")[:10])
 
     # 数据集
     train_set = VOC(args.data_dir, True)
