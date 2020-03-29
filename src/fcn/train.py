@@ -31,7 +31,7 @@ import random
 
 
 class Trainer:
-    def __init__(self, train_set, val_set, batch_size, network, optimizer, loss, num_epoch, summary_writer, use_cuda):
+    def __init__(self, train_set, val_set, batch_size, network, optimizer, loss, num_epoch, summary_writer, use_cuda, result_dir):
         self.train_set = train_set
         self.train_loader = DataLoader(self.train_set, batch_size=batch_size, shuffle=True)
 
@@ -46,6 +46,8 @@ class Trainer:
         self.use_cuda = use_cuda
 
         self.summary_writer = summary_writer
+
+        self.result_dir = result_dir
 
     def train_epoch(self, epoch):
         self.network.train()
@@ -95,9 +97,13 @@ class Trainer:
 
                     image = self.val_set.get_ori_image(i_val)
                     self.summary_writer.add_image("image", image, dataformats="HWC")
-                    self.summary_writer.add_image("pred_mask", np.uint8(pred_mask), dataformats="HWC")
-                    self.summary_writer.add_image("gt_mask", np.uint8(gt_mask), dataformats="HWC")
+                    self.summary_writer.add_image("pred_mask", pred_mask, dataformats="HWC")
+                    self.summary_writer.add_image("gt_mask", gt_mask, dataformats="HWC")
                     self.summary_writer.flush()
+
+                    Image.fromarray(image).save(os.path.join(self.result_dir, "{}.jpg".format(epoch)))
+                    Image.fromarray(pred_mask).save(os.path.join(self.result_dir, "{}_pred.jpg".format(epoch)))
+                    Image.fromarray(gt_mask).save(os.path.join(self.result_dir, "{}_gt.jpg".format(epoch)))
 
         scores, cls_iu = metrics.get_scores()
 
@@ -123,11 +129,11 @@ if __name__ == '__main__':
     arg_parser.add_argument('--d_pre_model_dir', default=None)
     arg_parser.add_argument('--d_model_dir', default=None)
     arg_parser.add_argument('--d_summary_dir', default="./run")
-    arg_parser.add_argument('--d_result_dir', default=None)
+    arg_parser.add_argument('--d_result_dir', default="./result")
 
     arg_parser.add_argument("--data_dir", default="E:\\dataset\\VOCdevkit\\VOC2012")
     arg_parser.add_argument("--use_cuda", type=bool, default=True)
-    arg_parser.add_argument("--num_epoch", type=int, default=1)
+    arg_parser.add_argument("--num_epoch", type=int, default=20)
     arg_parser.add_argument("--batch_size", type=int, default=1)
     arg_parser.add_argument("--lr", type=float, default=1e-6)
     arg_parser.add_argument("--weight_decay", type=float, default=5e-4)
@@ -140,10 +146,12 @@ if __name__ == '__main__':
     # 解压hdfs数据
     os.system("unzip {0}/VOCdevkit.zip -d {0} > /dev/null 2>&1".format(args.d_train_dir))
 
+    '''
     print(os.listdir("/train_dir/"))
     print(os.listdir("/train_dir/VOCdevkit"))
     print(os.listdir("/train_dir/VOCdevkit/VOC2012"))
     print(os.listdir("/train_dir/VOCdevkit/VOC2012/JPEGImages")[:10])
+    '''
 
     # 数据集
     train_set = VOC(args.data_dir, True)
@@ -171,7 +179,8 @@ if __name__ == '__main__':
                       loss,
                       args.num_epoch,
                       summary_writer,
-                      args.use_cuda)
+                      args.use_cuda,
+                      args.d_result_dir)
     trainer.run()
 
 

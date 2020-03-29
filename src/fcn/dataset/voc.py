@@ -102,7 +102,7 @@ class VOC(Dataset):
         rgb[:, :, 1] = g
         rgb[:, :, 2] = b
 
-        return rgb
+        return np.uint8(rgb)
 
     def __len__(self):
         return len(self.image_file_list)
